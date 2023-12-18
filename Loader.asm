@@ -1,5 +1,3 @@
-#fasm#         ; use flat assembler syntax
-#make_boot#
 org 0x7C00
 
 ; Bootloader By HighBit.
