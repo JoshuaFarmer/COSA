@@ -1,8 +1,10 @@
-#fasm#
 start:
 
+call clear_scr
 push 0
 pop ds
+push 1000h
+pop es
 
 mov ax, 0
 mov bx, 0
@@ -23,11 +25,27 @@ int 10h
 ;call splash    
 jmp dat_t 
 
-dat:    
+clear_scr:
+	pusha
+	mov ah, 0x00
+	mov al, 0x03  ; text mode 80x25 16 colours
+	int 0x10
+	popa
+	ret
+
+dat:
+	DAT_run_error	  db "unable to start program :(", 10, 13, 0
+	times 10-($ - $) db 0
+
+	DAT_user_prompt	db "enter your name: ", 0
+	times 10-($ - $) db 0
+	
 	SYS_help_text	db "A List of commands for COSA.", 10, 13
 			db "restart     |       restart the computer", 10, 13
 			db "splash      |       display the splash screen", 10, 13 
-			db "help        |       show this list", 10, 13, 0
+			db "help        |       show this list", 10, 13
+			db "disk        |       read the contents of disk 1", 10, 13
+			db "run         |       run code from 8000h", 10, 13, 0
 	times 10-($ - $) db 0	
 	SYS_desc	db "Computer Operating System A.", 10, 13, "Kernel Version 0.1 Revision 0", 10, 13, "(C) Joshua Farmer 2023", 10, 13, 0
 	times 10-($ - $) db 0
@@ -45,8 +63,12 @@ dat:
 	INST_help	db "help", 0    
 	times 10-($ - $) db 0
 	INST_user	db "set-user", 0
-	times 10-($ - $) db 0  
-	DAT_user_prompt	db "enter your name: ", 0
+	times 10-($ - $) db 0
+	  
+	INST_disk	db "disk", 0
+	times 10-($ - $) db 0 
+	INST_run	db "run", 0
+	times 10-($ - $) db 0
 dat_t:
 
 jmp kernel_mainloop
@@ -176,6 +198,52 @@ _INST_user:
 	mov byte[es:di], 20h  
 jmp kernel_mainloop
 
+_INST_disk:     
+	mov     ah, 02h ; read function.
+	mov     al, 1  ; sectors to read.
+	mov     ch, 0   ; cylinder.
+	mov     cl, 1   ; sector.
+	mov     dh, 0   ; head.
+	mov     dl, 1   ; drive.
+	
+	; es:bx points to receiving
+	;  data buffer:
+	mov     bx, 0x8000   
+	mov     es, bx
+	mov     bx, 0
+	
+	; read!
+	int     13h 
+	
+	mov     bx, 0x1000   
+	mov     es, bx
+	mov     bx, 0
+jmp kernel_mainloop
+
+_INST_run:     
+	mov al, 0x90   
+	
+	mov bx, 0x8000   
+	mov es, bx
+	mov bx, 0   
+	
+	mov si, 0
+	
+	cmp [es:si], al 
+	je _run_success
+_run_error:
+	mov bx, 0x1000   
+	mov es, bx
+	mov bx, 0  
+	mov di, DAT_run_error
+	call puts
+jmp kernel_mainloop
+_run_success:
+	mov bx, 0x8000   
+	mov es, bx
+	mov bx, 0
+	jmp 0x8000:0000
+
 kernel_mainloop:        
 	call clearBuffer
 	
@@ -210,12 +278,26 @@ kernel_mainloop:
 	cmp ax, 1 
 	je _INST_user
 	
+	; load disk
+	mov si, INST_disk
+	mov di, KeyBoardBuffer  
+	call strCmp
+	cmp ax, 1 
+	je _INST_disk  
+	
+	; run
+	mov si, INST_run
+	mov di, KeyBoardBuffer  
+	call strCmp
+	cmp ax, 1 
+	je _INST_run
+
 	; check if the user wants to restart
-	;mov si, INST_shutdown   
-	;mov di, KeyBoardBuffer  
-	;call strCmp 
-	;cmp ax, 1     
-	;je restart
+	mov si, INST_shutdown   
+	mov di, KeyBoardBuffer  
+	call strCmp 
+	cmp ax, 1     
+	je restart
 	
 	jmp kernel_mainloop
 restart:
