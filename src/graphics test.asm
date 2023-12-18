@@ -23,14 +23,14 @@ mov dx, YStart
 
 mov di, sprite1
 call draw
-
+; end program
 mov ah, 0
 int 16h
 mov bx, 0x1000   
 mov es, bx
 mov bx, 0
 jmp 0x1000:0000
-
+; data
 draw:	; use di for the sprite data
 	; draw pixel
 	mov ah, 0ch
