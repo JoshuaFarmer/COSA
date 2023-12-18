@@ -95,7 +95,7 @@ dat:
 			db "splash      |       display the splash screen", 10, 13 
 			db "help        |       show this list", 10, 13, 0
 		
-	SYS_desc	db "Computer Operating System A.", 10, 13, "Kernel Version 0.1 Revision 0", 10, 13, "(C) Joshua Farmer 2023", 10, 13, 0
+	SYS_desc	db "Computer Operating System A.", 10, 13, "Kernel Version 0.1 Revision 0", 10, 13, "(C) Joshua Farmer 2023 lol", 10, 13, 0
 	SYS_keyboard 	db 0      
 	SYS_prompt	db "> ", 0
 	SYS_user	db "computer", 20h, 0
