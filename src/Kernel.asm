@@ -64,6 +64,8 @@ dat:
 	times 10-($ - $) db 0
 	INST_user	db "set-user", 0
 	times 10-($ - $) db 0
+	INST_cls	db "cls", 0
+	times 10-($ - $) db 0
 	  
 	INST_disk	db "disk", 0
 	times 10-($ - $) db 0 
@@ -200,7 +202,7 @@ jmp kernel_mainloop
 
 _INST_disk:     
 	mov     ah, 02h ; read function.
-	mov     al, 1  ; sectors to read.
+	mov     al, 10  ; sectors to read.
 	mov     ch, 0   ; cylinder.
 	mov     cl, 1   ; sector.
 	mov     dh, 0   ; head.
@@ -243,6 +245,15 @@ _run_success:
 	mov es, bx
 	mov bx, 0
 	jmp 0x8000:0000
+
+_INST_cls:
+	call clear_scr
+	mov ah, 09h
+	mov cx, 1000h
+	mov al, 20h
+	mov bl, 17h
+	int 10h
+jmp kernel_mainloop
 
 kernel_mainloop:        
 	call clearBuffer
@@ -291,6 +302,13 @@ kernel_mainloop:
 	call strCmp
 	cmp ax, 1 
 	je _INST_run
+
+	; clear command
+	mov si, INST_cls
+	mov di, KeyBoardBuffer  
+	call strCmp
+	cmp ax, 1 
+	je _INST_cls
 
 	; check if the user wants to restart
 	mov si, INST_shutdown   
